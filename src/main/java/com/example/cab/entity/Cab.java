@@ -9,6 +9,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
+import com.example.cab.utility.MajorState;
+import com.example.cab.utility.MinorState;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -17,8 +20,8 @@ public class Cab {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long cabId;
-    private String majorState;      // Signed-In or Signed-Out
-    private String minorState;      // Available / Committed / Giving Ride
+    private int cabId;
+    private MajorState majorState;      // Signed-In or Signed-Out
+    private MinorState minorState;      // Available / Committed / Giving Ride
 
 }
