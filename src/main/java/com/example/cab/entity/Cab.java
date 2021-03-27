@@ -4,10 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 import com.example.cab.utility.MajorState;
 import com.example.cab.utility.MinorState;
@@ -23,5 +20,7 @@ public class Cab {
     private int cabId;
     private MajorState majorState;      // Signed-In or Signed-Out
     private MinorState minorState;      // Available / Committed / Giving Ride
+    private boolean interested;
+    private int location;
 
 }
