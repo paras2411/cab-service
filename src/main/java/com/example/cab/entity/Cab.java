@@ -16,7 +16,6 @@ import com.example.cab.utility.MinorState;
 public class Cab {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private int cabId;
     private MajorState majorState;      // Signed-In or Signed-Out
     private MinorState minorState;      // Available / Committed / Giving Ride

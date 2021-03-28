@@ -15,7 +15,9 @@ public interface CabRideRepository extends JpaRepository<CabRide, Integer> {
     @Query("select c from CabRide c where c.cabId = ?1")
     CabRide[] findByCabId(int cabId);
 
+    @Modifying
     @Query("delete from CabRide c where c.cabId = ?1")
+    @Transactional
     void deleteByCabId(int cabId);
 
     CabRide findByRideId(int rideId);
@@ -23,7 +25,9 @@ public interface CabRideRepository extends JpaRepository<CabRide, Integer> {
     @Query("SELECT count(c) from CabRide c where c.cabId = ?1")
     int numOfCabRides(int cabId);
 
+    @Modifying
     @Query("delete from CabRide c where c.rideId = ?1")
+    @Transactional
     void deleteByRideId(int rideId);
 
     @Modifying
