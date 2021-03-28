@@ -33,7 +33,7 @@ public class CabService {
 
     public void feedInitialData() {
 
-        File file = new File("/Users/paraslohani/Documents/IISc/PoDS/IDs.txt");
+        File file = new File("/IDs.txt");
         try {
             Scanner scan = new Scanner(file);
             int counter = 0;
@@ -74,8 +74,7 @@ public class CabService {
 
     public boolean isSignedIn(int cabId) {
         Cab cab = cabRepository.findByCabId(cabId);
-        return cab != null && cab.getMajorState() == MajorState.SignedIn
-                && cab.getMinorState() == MinorState.Available;
+        return cab != null && cab.getMajorState() == MajorState.SignedIn;
     }
 
     public Cab[] getCabsGivingRide() {
