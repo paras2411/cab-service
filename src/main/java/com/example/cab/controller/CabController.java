@@ -35,10 +35,16 @@ public class CabController {
     }
 
 
-    @GetMapping("/cab")
+    @GetMapping("/cab-details")
     public Cab findCab(@RequestParam int cabId) {
 
         return cabService.findByCabId(cabId);
+    }
+
+    @GetMapping("/ride-id")
+    public int findRideId(@RequestParam int cabId) {
+
+        return cabRideService.findRideIdByCahId(cabId);
     }
 
     @GetMapping("/cab-delete")
@@ -126,8 +132,10 @@ public class CabController {
             CabRide cabRide = cabRideService.findByRideId(rideId);
 
             if(cab.getMinorState() == MinorState.Committed && cabRide != null && cabRide.isActive()) {
+                cabService.updateLocation(cabId, cabRide.getSourceLoc());
                 cabService.updateMinorState(cab.getCabId(), MinorState.GivingRide);
                 cab.setMinorState(MinorState.GivingRide);
+                cab.setLocation(cabRide.getSourceLoc());
                 return true;
             }
         }

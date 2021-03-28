@@ -30,4 +30,7 @@ public interface CabRideRepository extends JpaRepository<CabRide, Integer> {
     @Query("update CabRide c set c.active = ?2 where c.rideId = ?1")
     @Transactional
     void updateActive(int rideId, boolean b);
+
+    @Query("select c.rideId from CabRide c where c.cabId=?1 and c.active=true")
+    int findRideIdByCabId(int cabId);
 }

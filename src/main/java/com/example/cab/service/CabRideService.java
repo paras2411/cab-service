@@ -42,4 +42,8 @@ public class CabRideService {
     public void updateActive(int rideId, boolean b) {
         cabRideRepository.updateActive(rideId, b);
     }
+
+    public int findRideIdByCahId(int cabId) {
+        return cabRideRepository.findRideIdByCabId(cabId);
+    }
 }
