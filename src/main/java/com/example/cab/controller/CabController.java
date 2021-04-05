@@ -73,9 +73,9 @@ public class CabController {
         return cabService.isSignedOut(cabId);
     }
 
-    @GetMapping("/cabSignedIn")
+    @GetMapping("/cabSignedInAndAvailable")
     public boolean cabSignedIn(@RequestParam int cabId) {
-        return cabService.isSignedIn(cabId);
+        return cabService.isSignedInAndAvailable(cabId);
     }
 
     @GetMapping("/cabsGivingRide")
@@ -94,12 +94,7 @@ public class CabController {
                                @RequestParam int sourceLoc,
                                @RequestParam int destinationLoc) {
 
-        // If cab accepting the request, then send true. It should accept if cabId is a valid ID and cabId is available and interested to accept.
-        // If response is true then cabId enters committed else remains available.
 
-        // Implement interested part such that cab accept alternate requests.
-
-        // For Part 2, this request should be isolated such that the request coming should wait in queue till the previous request is completed.
         log.info("Inside requestRide method of CabController " + cabId + " " + rideId + " " + sourceLoc + " " + destinationLoc);
 
         Cab cab = cabService.findByCabId(cabId);
@@ -125,8 +120,7 @@ public class CabController {
     public boolean rideStarted(@RequestParam int cabId,
                                @RequestParam int rideId) {
 
-        // If cabId is valid and the cab is in committed state for previous request of same rideId then move it into
-        // giving-ride state and return true otherwise false
+
         log.info("Inside rideStarted method of CabController " + cabId + " " + rideId);
 
         Cab cab = cabService.findByCabId(cabId);
@@ -151,7 +145,7 @@ public class CabController {
     public boolean rideCancelled(@RequestParam int cabId,
                                  @RequestParam int rideId) {
 
-        // If cabId is valid and in committed state of previous rideId, then return true with changing state to available state
+
         log.info("Inside rideCancelled method of CabController " + cabId + " " + rideId);
 
         Cab cab = cabService.findByCabId(cabId);
@@ -203,23 +197,26 @@ public class CabController {
     public  boolean signIn(@RequestParam int cabId,
                            @RequestParam int initialPos) {
 
-        // If cabId is valid and cab in signed out state then send request to rideService.cabSignsIn. If response is true then transition to signed in. else respond false
 
         log.info("Inside signIn method of CabController " + cabId + " " + initialPos);
         boolean cabSignedOut = cabService.isSignedOut(cabId);
         if(cabSignedOut) {
-                // send request to ride service
+
             boolean canCabSignIn = cabService.canCabSignIn(cabId, initialPos);
             if(canCabSignIn) {
+
                 Cab cab = cabService.findByCabId(cabId);
+
                 cabService.updateLocation(cabId, initialPos);
                 cabService.updateMinorState(cabId, MinorState.Available);
                 cabService.updateMajorState(cabId, MajorState.SignedIn);
                 cabService.updateInterested(cabId, true);
+
                 cab.setMajorState(MajorState.SignedIn);
                 cab.setMinorState(MinorState.Available);
                 cab.setLocation(initialPos);
                 cab.setInterested(true);
+
                 return true;
             }
         }

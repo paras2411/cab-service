@@ -16,7 +16,7 @@ public interface CabRepository extends JpaRepository<Cab, Integer> {
 
     Cab findByCabId(int cabId);
 
-    @Query("select c from Cab c where c.minorState=0 order by abs(?1 - c.location)")
+    @Query("select c from Cab c where c.majorState=0 order by abs(?1 - c.location)")
     Cab[] getCabs(int location);
 
     @Query("select c from Cab c where c.majorState=0 and c.minorState=2")

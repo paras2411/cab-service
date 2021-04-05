@@ -72,9 +72,9 @@ public class CabService {
         return cab != null && cab.getMajorState() == MajorState.SignedOut;
     }
 
-    public boolean isSignedIn(int cabId) {
+    public boolean isSignedInAndAvailable(int cabId) {
         Cab cab = cabRepository.findByCabId(cabId);
-        return cab != null && cab.getMajorState() == MajorState.SignedIn;
+        return cab != null && cab.getMajorState() == MajorState.SignedIn && cab.getMinorState() == MinorState.Available;
     }
 
     public Cab[] getCabsGivingRide() {
