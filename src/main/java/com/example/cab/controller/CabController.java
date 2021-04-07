@@ -94,7 +94,7 @@ public class CabController {
                                @RequestParam int sourceLoc,
                                @RequestParam int destinationLoc) {
 
-        if(sourceLoc < 0 || destinationLoc <= sourceLoc) return false;
+        if(sourceLoc < 0 || destinationLoc < 0) return false;
 
         log.info("Inside requestRide method of CabController " + cabId + " " + rideId + " " + sourceLoc + " " + destinationLoc);
 
