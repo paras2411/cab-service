@@ -21,6 +21,8 @@ public class CabController {
     @Autowired
     private CabRideService cabRideService;
 
+    private final Object mutex = new Object();
+
     @PostMapping("/")
     public Cab saveCab(@RequestBody Cab cab) {
 
@@ -57,7 +59,7 @@ public class CabController {
         cabService.deleteByCabId(cabId);
     }
 
-    @GetMapping("cabRideDelete")
+    @GetMapping("/cabRideDelete")
     public void deleteCabRide(@RequestParam int cabId) {
 
         cabRideService.deleteByCabId(cabId);
@@ -83,7 +85,7 @@ public class CabController {
         return cabService.getCabsGivingRide();
     }
 
-    @GetMapping("allCabsSignedIn")
+    @GetMapping("/allCabsSignedIn")
     public Cab[] allCabsSignedIn() {
         return cabService.getAllCabsSignedIn();
     }
@@ -94,27 +96,29 @@ public class CabController {
                                @RequestParam int sourceLoc,
                                @RequestParam int destinationLoc) {
 
-        if(sourceLoc < 0 || destinationLoc < 0) return false;
+        synchronized (mutex) {
 
-        log.info("Inside requestRide method of CabController " + cabId + " " + rideId + " " + sourceLoc + " " + destinationLoc);
+            if (sourceLoc < 0 || destinationLoc < 0) return false;
 
-        Cab cab = cabService.findByCabId(cabId);
-        if(cab != null) {
-            if(cab.getMinorState() == MinorState.Available) {
-                if(cab.isInterested()) {
-                    cabService.updateMinorState(cab.getCabId(), MinorState.Committed);
-                    CabRide cabRide = new CabRide(cabId, rideId, sourceLoc, destinationLoc);
-                    cabRideService.saveCabRide(cabRide);
-                    cabService.updateInterested(cab.getCabId(), false);
-                    return true;
-                }
-                else {
-                    cabService.updateInterested(cab.getCabId(), true);
+            log.info("Inside requestRide method of CabController " + cabId + " " + rideId + " " + sourceLoc + " " + destinationLoc);
+
+            Cab cab = cabService.findByCabId(cabId);
+            if (cab != null) {
+                if (cab.getMinorState() == MinorState.Available) {
+                    if (cab.isInterested()) {
+                        cabService.updateMinorState(cab.getCabId(), MinorState.Committed);
+                        CabRide cabRide = new CabRide(cabId, rideId, sourceLoc, destinationLoc);
+                        cabRideService.saveCabRide(cabRide);
+                        cabService.updateInterested(cab.getCabId(), false);
+                        return true;
+                    } else {
+                        cabService.updateInterested(cab.getCabId(), true);
+                    }
                 }
             }
-        }
 
-        return false;
+            return false;
+        }
     }
 
     @GetMapping("/rideStarted")
