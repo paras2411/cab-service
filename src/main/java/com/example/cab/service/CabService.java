@@ -24,7 +24,7 @@ public class CabService {
     @Autowired
     private RestTemplate restTemplate;
 
-    private final String rideUrl = "http://localhost:8081/";
+    private final String rideUrl = "http://ride:8081/";
 
     public Cab saveCab(Cab cab) {
 
@@ -33,7 +33,7 @@ public class CabService {
 
     public void feedInitialData() {
 
-        File file = new File("/IDs.txt");
+        File file = new File("/mnt/IDs.txt");
         try {
             Scanner scan = new Scanner(file);
             int counter = 0;
