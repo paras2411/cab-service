@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+
 @RestController
 @RequestMapping("")
 @Slf4j
@@ -22,6 +24,7 @@ public class CabController {
     private CabRideService cabRideService;
 
     private final Object mutex = new Object();
+    private final HashMap<Integer, Object> cabIdMutex = new HashMap<>();
 
     @PostMapping("/")
     public Cab saveCab(@RequestBody Cab cab) {
@@ -90,17 +93,34 @@ public class CabController {
         return cabService.getAllCabsSignedIn();
     }
 
+
+    /**
+     * Api is requested from ride service for checking if cab is available and interested to take ride
+     * @param cabId id of the cab
+     * @param rideId id of the ride requested
+     * @param sourceLoc source location where the ride will start
+     * @param destinationLoc destination location where the ride will end
+     * @return boolean value whether ride started or not
+     */
     @GetMapping("/requestRide")
     public boolean requestRide(@RequestParam int cabId,
                                @RequestParam int rideId,
                                @RequestParam int sourceLoc,
                                @RequestParam int destinationLoc) {
 
+
+        if (sourceLoc < 0 || destinationLoc < 0) return false;
+
+        // Create mutex for the cab which does not have and is being used for ride request
         synchronized (mutex) {
+            if(!cabIdMutex.containsKey(cabId)) {
+                cabIdMutex.put(cabId, new Object());
+            }
+        }
 
-            if (sourceLoc < 0 || destinationLoc < 0) return false;
+        synchronized (cabIdMutex.get(cabId)) {
 
-            log.info("Inside requestRide method of CabController " + cabId + " " + rideId + " " + sourceLoc + " " + destinationLoc);
+            log.info("Ride requested with details: cabId = " + cabId + " rideId = " + rideId + " sourceLoc = " + sourceLoc + " destinationLoc = " + destinationLoc);
 
             Cab cab = cabService.findByCabId(cabId);
             if (cab != null) {
@@ -116,17 +136,22 @@ public class CabController {
                     }
                 }
             }
-
-            return false;
         }
+        return false;
     }
 
+    /**
+     * Api invoked from ride service to start the ride accepted by the cab
+     * @param cabId Id of the cab accepted the ride
+     * @param rideId Id of the ride
+     * @return Boolean value if the ride is started
+     */
     @GetMapping("/rideStarted")
     public boolean rideStarted(@RequestParam int cabId,
                                @RequestParam int rideId) {
 
 
-        log.info("Inside rideStarted method of CabController " + cabId + " " + rideId);
+        log.info("Ride started having details: cabId = " + cabId + " rideId = " + rideId);
 
         Cab cab = cabService.findByCabId(cabId);
 
@@ -146,6 +171,12 @@ public class CabController {
         return false;
     }
 
+    /**
+     * Api is triggered from ride service to cancel the ride by the given cab and not to start it.
+     * @param cabId Id of the cab
+     * @param rideId Id of the ride
+     * @return Boolean value whether the ride is cancelled
+     */
     @GetMapping("/rideCancelled")
     public boolean rideCancelled(@RequestParam int cabId,
                                  @RequestParam int rideId) {
@@ -166,6 +197,12 @@ public class CabController {
         return false;
     }
 
+    /**
+     * Api is triggered by ride service to end the ride by the cab
+     * @param cabId Id of the cab
+     * @param rideId Id of the ride
+     * @return Boolean value whether ride has ended or not.
+     */
     @GetMapping("/rideEnded")
     public boolean rideEnded(@RequestParam int cabId,
                              @RequestParam int rideId) {
@@ -198,60 +235,98 @@ public class CabController {
         return false;
     }
 
+    /**
+     * Cab driver will request this api to sign in at the initialPos
+     * @param cabId Id of the cab driver
+     * @param initialPos Location where cab will start
+     * @return Boolean value whether cab is signed in
+     */
     @GetMapping("/signIn")
     public  boolean signIn(@RequestParam int cabId,
                            @RequestParam int initialPos) {
 
 
+
         log.info("Inside signIn method of CabController " + cabId + " " + initialPos);
-        boolean cabSignedOut = cabService.isSignedOut(cabId);
-        if(cabSignedOut) {
 
-            boolean canCabSignIn = cabService.canCabSignIn(cabId, initialPos);
-            if(canCabSignIn) {
+        synchronized (mutex) {
+            if(!cabIdMutex.containsKey(cabId)) {
+                cabIdMutex.put(cabId, new Object());
+            }
+        }
 
-                Cab cab = cabService.findByCabId(cabId);
+        synchronized (cabIdMutex.get(cabId)) {
 
-                cabService.updateLocation(cabId, initialPos);
-                cabService.updateMinorState(cabId, MinorState.Available);
-                cabService.updateMajorState(cabId, MajorState.SignedIn);
-                cabService.updateInterested(cabId, true);
+            boolean cabSignedOut = cabService.isSignedOut(cabId);
+            if (cabSignedOut) {
 
-                cab.setMajorState(MajorState.SignedIn);
-                cab.setMinorState(MinorState.Available);
-                cab.setLocation(initialPos);
-                cab.setInterested(true);
+                boolean canCabSignIn = cabService.canCabSignIn(cabId, initialPos);
+                if (canCabSignIn) {
 
-                return true;
+                    Cab cab = cabService.findByCabId(cabId);
+
+                    cabService.updateLocation(cabId, initialPos);
+                    cabService.updateMinorState(cabId, MinorState.Available);
+                    cabService.updateMajorState(cabId, MajorState.SignedIn);
+                    cabService.updateInterested(cabId, true);
+
+                    cab.setMajorState(MajorState.SignedIn);
+                    cab.setMinorState(MinorState.Available);
+                    cab.setLocation(initialPos);
+                    cab.setInterested(true);
+
+                    return true;
+                }
             }
         }
 
         return false;
     }
 
+    /**
+     * Reqeust from cab driver to sign out
+     * @param cabId Id of the driver
+     * @return Boolean value whether the cab is signed out
+     */
     @GetMapping("/signOut")
     public boolean signOut(@RequestParam int cabId) {
 
+
         log.info("Inside signOut method of CabController " + cabId);
-        Cab cab = cabService.findByCabId(cabId);
-        if(cab != null) {
-            if(cab.getMajorState() == MajorState.SignedIn) {
 
-                boolean canCabSignOut = cabService.canCabSignOut(cabId);
+        synchronized (mutex) {
+            if(!cabIdMutex.containsKey(cabId)) {
+                cabIdMutex.put(cabId, new Object());
+            }
+        }
 
-                if(canCabSignOut) {
-                    cabService.updateMajorState(cabId, MajorState.SignedOut);
-                    cabService.updateMinorState(cabId, MinorState.NotAvailable);
-                    cab.setMajorState(MajorState.SignedOut);
-                    cab.setMinorState(MinorState.NotAvailable);
-                    cabRideService.deleteByCabId(cabId);
-                    return true;
+        synchronized (cabIdMutex.get(cabId)) {
+
+            Cab cab = cabService.findByCabId(cabId);
+            if (cab != null) {
+                if (cab.getMajorState() == MajorState.SignedIn) {
+
+                    boolean canCabSignOut = cabService.canCabSignOut(cabId);
+
+                    if (canCabSignOut) {
+                        cabService.updateMajorState(cabId, MajorState.SignedOut);
+                        cabService.updateMinorState(cabId, MinorState.NotAvailable);
+                        cab.setMajorState(MajorState.SignedOut);
+                        cab.setMinorState(MinorState.NotAvailable);
+                        cabRideService.deleteByCabId(cabId);
+                        return true;
+                    }
                 }
             }
         }
         return false;
     }
 
+    /**
+     *
+     * @param cabId
+     * @return
+     */
     @GetMapping("/numRides")
     public int numRides(@RequestParam int cabId) {
 
